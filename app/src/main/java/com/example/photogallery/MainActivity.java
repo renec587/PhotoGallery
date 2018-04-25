@@ -36,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
     TextView tvDateTime;
     TextView tvLatLong;
 
-    public static Context mContext;
+    public Context mContext;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -104,7 +104,7 @@ public class MainActivity extends AppCompatActivity {
         } catch(Exception e) {
             //Welp, that didn't work.
         }
-        return "No Lat/Long Data Found";
+        return "Picture Taken"; //Just a placeholder until I get this to work
     }
 
     private File createImageFile() throws IOException {
