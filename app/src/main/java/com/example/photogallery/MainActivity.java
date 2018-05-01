@@ -22,10 +22,13 @@ import android.widget.TextView;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 
 import static java.lang.Boolean.TRUE;
 
+//TODO - Use Location services to insert EXIF data into each picture after it is taken.
 public class MainActivity extends AppCompatActivity {
 
     Uri photoURI;
@@ -35,6 +38,8 @@ public class MainActivity extends AppCompatActivity {
     ImageView imageView;
     TextView tvDateTime;
     TextView tvLatLong;
+    ArrayList<File> fileList;
+    int fileIndex = 0;
 
     public Context mContext;
 
@@ -45,6 +50,14 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         mTextMessage = (TextView) findViewById(R.id.message);
+        imageView = (ImageView)findViewById(R.id.imageView);
+        tvLatLong = (TextView)findViewById(R.id.tvLatLong);
+        tvDateTime = (TextView)findViewById(R.id.textDateTime);
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        fileList = new ArrayList<File>(Arrays.asList(storageDir.listFiles()));
+        if(fileList.size() >= 1) imageView.setImageURI(FileProvider.getUriForFile(this,"com.example.android.fileprovider",fileList.get(0)));
+//        tvLatLong.setText(getLatLong(fileList.get(fileIndex)));
+        showImageAttribs();
     }
 
     /* Pressed Search */
@@ -55,11 +68,17 @@ public class MainActivity extends AppCompatActivity {
 
     /* Advance through pictures */
     public void nextPicture(View view) {
-
+        if(fileList.size() == fileIndex+1) return;
+        fileIndex++;
+        imageView.setImageURI(FileProvider.getUriForFile(this,"com.example.android.fileprovider",fileList.get(fileIndex)));
+        showImageAttribs();
     }
 
     public void previousPicture(View view) {
-
+        if(fileIndex == 0) return;
+        fileIndex--;
+        imageView.setImageURI(FileProvider.getUriForFile(this,"com.example.android.fileprovider",fileList.get(fileIndex)));
+        showImageAttribs();
     }
 
     public void snapButton(View view) {
@@ -72,6 +91,8 @@ public class MainActivity extends AppCompatActivity {
                 //Error, do nothing.
             }
             if(photoFile != null) {
+                fileList.add(photoFile);
+                fileIndex = fileList.size()-1;
                 photoURI = FileProvider.getUriForFile(this,"com.example.android.fileprovider",photoFile);
                 intent.putExtra(MediaStore.EXTRA_OUTPUT,photoURI);
                 startActivityForResult(intent, REQUEST_IMAGE);
@@ -82,27 +103,46 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode,int resultCode,Intent data) {
         if(requestCode == REQUEST_IMAGE && resultCode == RESULT_OK) {
-            imageView = (ImageView)findViewById(R.id.imageView);
+
             imageView.setImageURI(photoURI);
             /* Display the date and location */
-            String dateTime = new SimpleDateFormat("dd/yyyy/MM HH:mm:ss").format(new Date());
-            tvDateTime = (TextView)findViewById(R.id.textDateTime);
-            tvDateTime.setText(dateTime);
-            tvLatLong = (TextView)findViewById(R.id.tvLatLong);
-            tvLatLong.setText(getLatLong(photoURI));
+//            String dateTime = new SimpleDateFormat("dd/yyyy/MM HH:mm:ss").format(new Date());
+ //
+  //          tvDateTime.setText(dateTime);
+   //         tvLatLong.setText(getLatLong(fileList.get(fileIndex)));
+            showImageAttribs();
         }
     }
 
-    private String getLatLong(Uri filePath) {
+    private void showImageAttribs() {
+        tvLatLong.setText(getLatLong(fileList.get(fileIndex)));
+        tvDateTime.setText(getDateTime(fileList.get(fileIndex)));
+    }
+
+    private String getDateTime(File file) {
         try {
-            ExifInterface exif = new ExifInterface(filePath.getPath());
+            ExifInterface exif = new ExifInterface(file.getPath());
+            return exif.getAttribute(ExifInterface.TAG_DATETIME);
+        } catch(Exception e) {
+            System.out.println("getDateTime Exception:" + e);
+        }
+        return "No Date Time";
+    }
+
+    private String getLatLong(File file) {
+        float[] output = new float[2];
+        try {
+            ExifInterface exif = new ExifInterface(file.getPath());
+            exif.getLatLong(output);
             String attrib = ExifInterface.TAG_GPS_LATITUDE;
             String latData = exif.getAttribute(attrib);
             attrib = ExifInterface.TAG_GPS_LONGITUDE;
             String longData = exif.getAttribute(attrib);
             return "LAT:" + latData + " LONG:" + longData;
+//            return exif.getAttribute(ExifInterface.TAG_DATETIME);
+
         } catch(Exception e) {
-            //Welp, that didn't work.
+            System.out.println("Exception:" + e);
         }
         return "Picture Taken"; //Just a placeholder until I get this to work
     }
