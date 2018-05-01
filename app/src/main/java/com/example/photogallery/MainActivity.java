@@ -34,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
     Uri photoURI;
     private TextView mTextMessage;
     static final int REQUEST_IMAGE = 1;
+    static final int SEARCH_ACTIVITY = 2;
     String mCurrentPhotoPath;
     ImageView imageView;
     TextView tvDateTime;
@@ -63,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
     /* Pressed Search */
     public void searchMessage(View view) {
         Intent intent = new Intent(this,SearchActivity.class);
-        startActivity(intent);
+        startActivityForResult(intent,SEARCH_ACTIVITY);
     }
 
     /* Advance through pictures */
@@ -111,6 +112,9 @@ public class MainActivity extends AppCompatActivity {
   //          tvDateTime.setText(dateTime);
    //         tvLatLong.setText(getLatLong(fileList.get(fileIndex)));
             showImageAttribs();
+        } else if(requestCode == SEARCH_ACTIVITY && resultCode == RESULT_OK) {
+            tvLatLong = (TextView)findViewById(R.id.tvLatLong);
+            tvLatLong.setText("SEARCH OK");
         }
     }
 
