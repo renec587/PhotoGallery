@@ -57,7 +57,6 @@ public class MainActivity extends AppCompatActivity {
         File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
         fileList = new ArrayList<File>(Arrays.asList(storageDir.listFiles()));
         if(fileList.size() >= 1) imageView.setImageURI(FileProvider.getUriForFile(this,"com.example.android.fileprovider",fileList.get(0)));
-//        tvLatLong.setText(getLatLong(fileList.get(fileIndex)));
         showImageAttribs();
     }
 
@@ -106,11 +105,6 @@ public class MainActivity extends AppCompatActivity {
         if(requestCode == REQUEST_IMAGE && resultCode == RESULT_OK) {
 
             imageView.setImageURI(photoURI);
-            /* Display the date and location */
-//            String dateTime = new SimpleDateFormat("dd/yyyy/MM HH:mm:ss").format(new Date());
- //
-  //          tvDateTime.setText(dateTime);
-   //         tvLatLong.setText(getLatLong(fileList.get(fileIndex)));
             showImageAttribs();
         } else if(requestCode == SEARCH_ACTIVITY && resultCode == RESULT_OK) {
             tvLatLong = (TextView)findViewById(R.id.tvLatLong);
@@ -119,8 +113,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showImageAttribs() {
-        tvLatLong.setText(getLatLong(fileList.get(fileIndex)));
-        tvDateTime.setText(getDateTime(fileList.get(fileIndex)));
+        if(fileList.size() > 0) {
+            tvLatLong.setText(getLatLong(fileList.get(fileIndex)));
+            tvDateTime.setText(getDateTime(fileList.get(fileIndex)));
+        }
     }
 
     private String getDateTime(File file) {
@@ -143,8 +139,6 @@ public class MainActivity extends AppCompatActivity {
             attrib = ExifInterface.TAG_GPS_LONGITUDE;
             String longData = exif.getAttribute(attrib);
             return "LAT:" + latData + " LONG:" + longData;
-//            return exif.getAttribute(ExifInterface.TAG_DATETIME);
-
         } catch(Exception e) {
             System.out.println("Exception:" + e);
         }
@@ -162,7 +156,6 @@ public class MainActivity extends AppCompatActivity {
                 storageDir      /* directory */
         );
         image.getParentFile().mkdirs();
-        //System.out.println(storageDir.toString());
         // Save a file: path for use with ACTION_VIEW intents
         mCurrentPhotoPath = image.getAbsolutePath();
         return image;
