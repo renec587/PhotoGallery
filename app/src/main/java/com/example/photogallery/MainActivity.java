@@ -68,14 +68,14 @@ public class MainActivity extends AppCompatActivity {
 
     /* Advance through pictures */
     public void nextPicture(View view) {
-        if(fileList.size() == fileIndex+1) return;
+        if(fileList.size() == 0 || fileList.size() == fileIndex+1) return;
         fileIndex++;
         imageView.setImageURI(FileProvider.getUriForFile(this,"com.example.android.fileprovider",fileList.get(fileIndex)));
         showImageAttribs();
     }
 
     public void previousPicture(View view) {
-        if(fileIndex == 0) return;
+        if(fileList.size() == 0 || fileIndex == 0) return;
         fileIndex--;
         imageView.setImageURI(FileProvider.getUriForFile(this,"com.example.android.fileprovider",fileList.get(fileIndex)));
         showImageAttribs();
