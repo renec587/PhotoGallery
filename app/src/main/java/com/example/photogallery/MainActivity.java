@@ -15,8 +15,11 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -29,6 +32,7 @@ import java.util.Date;
 import static java.lang.Boolean.TRUE;
 
 //TODO - Use Location services to insert EXIF data into each picture after it is taken.
+//TODO - Search page has to return proper data (check for valid data), and we have to filter on those results.
 public class MainActivity extends AppCompatActivity {
 
     Uri photoURI;
@@ -39,9 +43,16 @@ public class MainActivity extends AppCompatActivity {
     ImageView imageView;
     TextView tvDateTime;
     TextView tvLatLong;
+    EditText etCaption;
     ArrayList<File> fileList;
+    ArrayList<File> filteredList;
+    ArrayList<File> displayList;
     int fileIndex = 0;
 
+    String DEFAULT_CAPTION = "Caption";
+    String firstDate = "";
+    String secondDate = "";
+    String keyWord = "";
     public Context mContext;
 
     @Override
@@ -54,9 +65,24 @@ public class MainActivity extends AppCompatActivity {
         imageView = (ImageView)findViewById(R.id.imageView);
         tvLatLong = (TextView)findViewById(R.id.tvLatLong);
         tvDateTime = (TextView)findViewById(R.id.textDateTime);
+        etCaption = (EditText) findViewById(R.id.textCaption);
+        etCaption.addTextChangedListener(new TextWatcher() {
+
+            public void afterTextChanged(Editable s) {}
+
+            public void beforeTextChanged(CharSequence s, int start,
+                                          int count, int after) {
+            }
+
+            public void onTextChanged(CharSequence s, int start,
+                                      int before, int count) {
+                setCaption(etCaption.getText().toString(),displayList.get(fileIndex));
+            }
+        });
         File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
         fileList = new ArrayList<File>(Arrays.asList(storageDir.listFiles()));
         if(fileList.size() >= 1) imageView.setImageURI(FileProvider.getUriForFile(this,"com.example.android.fileprovider",fileList.get(0)));
+        displayList = fileList;
         showImageAttribs();
     }
 
@@ -68,16 +94,16 @@ public class MainActivity extends AppCompatActivity {
 
     /* Advance through pictures */
     public void nextPicture(View view) {
-        if(fileList.size() == 0 || fileList.size() == fileIndex+1) return;
+        if(displayList.size() == 0 || displayList.size() == fileIndex+1) return;
         fileIndex++;
-        imageView.setImageURI(FileProvider.getUriForFile(this,"com.example.android.fileprovider",fileList.get(fileIndex)));
+        imageView.setImageURI(FileProvider.getUriForFile(this,"com.example.android.fileprovider",displayList.get(fileIndex)));
         showImageAttribs();
     }
 
     public void previousPicture(View view) {
-        if(fileList.size() == 0 || fileIndex == 0) return;
+        if(displayList.size() == 0 || fileIndex == 0) return;
         fileIndex--;
-        imageView.setImageURI(FileProvider.getUriForFile(this,"com.example.android.fileprovider",fileList.get(fileIndex)));
+        imageView.setImageURI(FileProvider.getUriForFile(this,"com.example.android.fileprovider",displayList.get(fileIndex)));
         showImageAttribs();
     }
 
@@ -103,19 +129,91 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode,int resultCode,Intent data) {
         if(requestCode == REQUEST_IMAGE && resultCode == RESULT_OK) {
-
             imageView.setImageURI(photoURI);
+            setCaption(DEFAULT_CAPTION,fileList.get(fileIndex));
             showImageAttribs();
         } else if(requestCode == SEARCH_ACTIVITY && resultCode == RESULT_OK) {
-            tvLatLong = (TextView)findViewById(R.id.tvLatLong);
             tvLatLong.setText("SEARCH OK");
+            firstDate = data.getStringExtra("STARTDATE");
+            secondDate = data.getStringExtra("ENDDATE");
+            keyWord = data.getStringExtra("KEYWORD");
+            setFilters();
+            if(filteredList.size() > 0) {
+                displayList = filteredList;
+                fileIndex = 0;
+            } else {
+                displayList = fileList;
+            }
+            imageView.setImageURI(FileProvider.getUriForFile(this,"com.example.android.fileprovider",displayList.get(fileIndex)));
+            showImageAttribs();
         }
     }
 
+    //TODO - Check for bad data
+    //TODO -
+    private void setFilters() {
+        filteredList = new ArrayList<File>();
+        ArrayList<File> workingList;
+        ExifInterface exif;
+        if(firstDate != "" && secondDate != "") {
+            for (int i = 0; i < fileList.size(); i++) {
+                String date1[] = firstDate.split("/"); //Index 0 is day
+                String date2[] = secondDate.split("/"); //Index 1 is month, Index 2 is year.
+                if (date1.length == 3 && date2.length == 3 && date1[0] != "" && date1[1] != "" && date2[0] != "" && date2[1] != "") {
+                    String dateTime[] = getDateTime(fileList.get(i)).split(":");
+                    dateTime[2] = dateTime[2].substring(0,2);
+                    if (Integer.parseInt(date1[2]) <= Integer.parseInt(dateTime[0]) && Integer.parseInt(date2[2]) >= Integer.parseInt(dateTime[0])) { //Within Year
+                        if (Integer.parseInt(date1[1]) <= Integer.parseInt(dateTime[1]) && Integer.parseInt(date2[1]) >= Integer.parseInt(dateTime[1])) { //Within Month
+                            if (Integer.parseInt(date1[0]) <= Integer.parseInt(dateTime[2]) && Integer.parseInt(date2[0]) >= Integer.parseInt(dateTime[2])) { //Within Month
+                                if(!keyWord.isEmpty()) {
+                                    try {
+                                        exif = new ExifInterface(fileList.get(i).getPath());
+                                        if (exif.getAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION).equalsIgnoreCase(keyWord)) {
+                                            filteredList.add(fileList.get(i));
+                                        }
+                                    } catch (Exception e) {
+                                        continue;                     //Skip entry.
+                                    }
+                                 } else {
+                                    filteredList.add(fileList.get(i));
+                                }
+
+                            }
+                        }
+                    }
+                }
+
+            }
+        }
+        return;
+    }
+
+    private String getCaption(File imageFile) {
+        try {
+            ExifInterface exif = new ExifInterface(imageFile.getPath());
+            return exif.getAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION);
+        } catch (Exception e) {
+            return "Caption Error";
+        }
+    }
+
+    private void setCaption(String caption,File imageFile) {
+        try {
+            ExifInterface exif = new ExifInterface(imageFile.getPath());
+            String attrib = ExifInterface.TAG_IMAGE_DESCRIPTION;
+            exif.setAttribute(attrib,caption);
+            exif.saveAttributes();
+        } catch (Exception e) {
+            return;
+        }
+        return;
+    }
+
     private void showImageAttribs() {
-        if(fileList.size() > 0) {
-            tvLatLong.setText(getLatLong(fileList.get(fileIndex)));
-            tvDateTime.setText(getDateTime(fileList.get(fileIndex)));
+        if(displayList.size() > 0) {
+            tvLatLong.setText(getLatLong(displayList.get(fileIndex)));
+            tvDateTime.setText(getDateTime(displayList.get(fileIndex)));
+            etCaption.setText(getCaption(displayList.get(fileIndex)));
         }
     }
 
@@ -124,7 +222,7 @@ public class MainActivity extends AppCompatActivity {
             ExifInterface exif = new ExifInterface(file.getPath());
             return exif.getAttribute(ExifInterface.TAG_DATETIME);
         } catch(Exception e) {
-            System.out.println("getDateTime Exception:" + e);
+            System.out.println("getDateTime:" + e);
         }
         return "No Date Time";
     }

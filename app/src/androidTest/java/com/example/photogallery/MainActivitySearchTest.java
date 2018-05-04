@@ -17,7 +17,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static android.support.test.espresso.Espresso.onView;
-import static android.support.test.espresso.Espresso.pressBack;
 import static android.support.test.espresso.action.ViewActions.click;
 import static android.support.test.espresso.action.ViewActions.closeSoftKeyboard;
 import static android.support.test.espresso.action.ViewActions.replaceText;
@@ -48,7 +47,7 @@ public class MainActivitySearchTest {
         appCompatButton.perform(click());
 
         ViewInteraction appCompatEditText = onView(
-                allOf(withId(R.id.editText5), withText("45654"),
+                allOf(withId(R.id.etDate1), withText("45654"),
                         childAtPosition(
                                 childAtPosition(
                                         withId(android.R.id.content),
@@ -58,7 +57,7 @@ public class MainActivitySearchTest {
         appCompatEditText.perform(click());
 
         ViewInteraction appCompatEditText2 = onView(
-                allOf(withId(R.id.editText5), withText("45654"),
+                allOf(withId(R.id.etDate1), withText("45654"),
                         childAtPosition(
                                 childAtPosition(
                                         withId(android.R.id.content),
@@ -68,7 +67,7 @@ public class MainActivitySearchTest {
         appCompatEditText2.perform(replaceText("4/25/2018"));
 
         ViewInteraction appCompatEditText3 = onView(
-                allOf(withId(R.id.editText5), withText("4/25/2018"),
+                allOf(withId(R.id.etDate1), withText("4/25/2018"),
                         childAtPosition(
                                 childAtPosition(
                                         withId(android.R.id.content),
@@ -78,7 +77,7 @@ public class MainActivitySearchTest {
         appCompatEditText3.perform(closeSoftKeyboard());
 
         ViewInteraction appCompatEditText4 = onView(
-                allOf(withId(R.id.editText6), withText("65465"),
+                allOf(withId(R.id.etDate2), withText("65465"),
                         childAtPosition(
                                 childAtPosition(
                                         withId(android.R.id.content),
@@ -88,7 +87,7 @@ public class MainActivitySearchTest {
         appCompatEditText4.perform(replaceText("4/25/2018"));
 
         ViewInteraction appCompatEditText5 = onView(
-                allOf(withId(R.id.editText6), withText("4/25/2018"),
+                allOf(withId(R.id.etDate2), withText("4/25/2018"),
                         childAtPosition(
                                 childAtPosition(
                                         withId(android.R.id.content),

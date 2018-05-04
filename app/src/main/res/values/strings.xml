@@ -75,7 +75,7 @@
     <string name="pref_title_vibrate">Vibrate</string>
     <string name="search_time">Date:</string>
     <string name="search_location">Location:</string>
-    <string name="search_keywords">Keywords:</string>
+    <string name="search_keywords">Keyword:</string>
     <string name="location_button1">Top Left</string>
     <string name="location_button2">Bottom Right</string>
     <string name="search_go">Go</string>
