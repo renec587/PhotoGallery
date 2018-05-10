@@ -88,13 +88,17 @@ public class MainActivity extends AppCompatActivity {
     /* Advance through pictures */
     public void nextPicture(View view) {
         if(fileManager.next() == 0) return;
-        imageView.setImageURI(FileProvider.getUriForFile(this,"com.example.android.fileprovider",fileManager.get()));
+        File nextFile = fileManager.get();
+        if(nextFile == null) return;
+        imageView.setImageURI(FileProvider.getUriForFile(this,"com.example.android.fileprovider",nextFile));
         showImageAttribs();
     }
 
     public void previousPicture(View view) {
         if(fileManager.previous() < 0) return;
-        imageView.setImageURI(FileProvider.getUriForFile(this,"com.example.android.fileprovider",fileManager.get()));
+        File file = fileManager.get();
+        if (file == null) return;
+        imageView.setImageURI(FileProvider.getUriForFile(this,"com.example.android.fileprovider",file));
         showImageAttribs();
     }
 
@@ -131,7 +135,10 @@ public class MainActivity extends AppCompatActivity {
             keywords.add(keyWord);
             fileManager.filter(keywords);
             fileManager.filterTime(firstDate,secondDate);
-            imageView.setImageURI(FileProvider.getUriForFile(this,"com.example.android.fileprovider",fileManager.get()));
+            File file = fileManager.get();
+            if(file != null) {
+                imageView.setImageURI(FileProvider.getUriForFile(this, "com.example.android.fileprovider", fileManager.get()));
+            }
             showImageAttribs();
         }
     }

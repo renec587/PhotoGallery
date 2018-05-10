@@ -22,5 +22,10 @@ public class ExampleInstrumentedTest {
         Context appContext = InstrumentationRegistry.getTargetContext();
 //Changes to see if git works.
         assertEquals("com.example.photogallery", appContext.getPackageName());
+        DiskFiles testFiles = new DiskFiles(appContext);
+    }
+    @Test
+    public void testmethod() {
+
     }
 }

@@ -64,8 +64,11 @@ public class DiskFiles implements IFileManager {
     }
     // Filters entries that match these keywords returns # of entries which matched
     public int filter(ArrayList<String> keywords) {
-        if(keywords.size() == 0) return filterIds.size();
-        keywords.clear();
+        if(keywords.size() == 0) {
+            this.keywords.clear();
+            return filterIds.size();
+        }
+        this.keywords = new ArrayList<String>(keywords);
         setFilters();
         return filterIds.size();
     }
@@ -103,6 +106,7 @@ public class DiskFiles implements IFileManager {
 
     // Applies the set filters to the dataset
     private void setFilters() {
+        if(fileList.size() == 0) return;
         filterIds.clear();
         if(keywords.size() == 0 && coord1.isEmpty() && date1.isEmpty()) {
             for(int i = 0; i < fileList.size(); i++) filterIds.add(i);
@@ -122,6 +126,7 @@ public class DiskFiles implements IFileManager {
         try {
             ExifInterface exif = new ExifInterface(file.getPath());
             fileDateTime = exif.getAttribute(ExifInterface.TAG_DATETIME);
+            if(fileDateTime == null) return false;
         } catch(Exception e) {
             System.out.println("getDateTime:" + e);
             return true; // We default to true if we can't prove false.
@@ -160,6 +165,7 @@ public class DiskFiles implements IFileManager {
         } catch (Exception e) {
             return true; //I guess we match if there is nothing there!
         }
+        if(keyword == null) return false; //No keyword stored in file, so it can't match.
         for(int i = 0; i < keywords.size(); i++) {
             if (!keyword.equalsIgnoreCase(keywords.get(i))) return false;
         }
