@@ -57,11 +57,11 @@ public class MainActivity extends AppCompatActivity {
 
         fileManager = new DiskFiles(mContext);
 
-        mTextMessage = (TextView) findViewById(R.id.message);
-        imageView = (ImageView)findViewById(R.id.imageView);
-        tvLatLong = (TextView)findViewById(R.id.tvLatLong);
-        tvDateTime = (TextView)findViewById(R.id.textDateTime);
-        etCaption = (EditText) findViewById(R.id.textCaption);
+        mTextMessage = findViewById(R.id.message);
+        imageView = findViewById(R.id.imageView);
+        tvLatLong = findViewById(R.id.tvLatLong);
+        tvDateTime = findViewById(R.id.textDateTime);
+        etCaption = findViewById(R.id.textCaption);
         etCaption.addTextChangedListener(new TextWatcher() {
 
             public void afterTextChanged(Editable s) {}
@@ -132,12 +132,12 @@ public class MainActivity extends AppCompatActivity {
             String secondDate = data.getStringExtra("ENDDATE");
             String keyWord = data.getStringExtra("KEYWORD");
             ArrayList keywords = new ArrayList<String>();
-            keywords.add(keyWord);
+            if(!keyWord.isEmpty()) keywords.add(keyWord);
             fileManager.filter(keywords);
             fileManager.filterTime(firstDate,secondDate);
             File file = fileManager.get();
             if(file != null) {
-                imageView.setImageURI(FileProvider.getUriForFile(this, "com.example.android.fileprovider", fileManager.get()));
+                imageView.setImageURI(FileProvider.getUriForFile(this, "com.example.android.fileprovider", file));
             }
             showImageAttribs();
         }
@@ -159,9 +159,8 @@ public class MainActivity extends AppCompatActivity {
             exif.setAttribute(attrib,caption);
             exif.saveAttributes();
         } catch (Exception e) {
-            return;
+            //Do nothing
         }
-        return;
     }
 
     private void showImageAttribs() {

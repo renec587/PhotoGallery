@@ -1,11 +1,16 @@
 package com.example.photogallery;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.media.ExifInterface;
+
+import android.os.Build;
 import android.os.Environment;
+import android.support.annotation.RequiresApi;
 
 
 import java.io.File;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -21,12 +26,12 @@ public class DiskFiles implements IFileManager {
     private String coord1,coord2;
 
     public DiskFiles(Context context) {
-        fileList = new ArrayList<File>();
-        filterIds = new ArrayList<Integer>();
+        fileList = new ArrayList<>();
+        filterIds = new ArrayList<>();
         File storageDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES);
-        fileList = new ArrayList<File>(Arrays.asList(storageDir.listFiles()));
+        fileList = new ArrayList<>(Arrays.asList(storageDir.listFiles()));
         date1 = date2 = coord1 = coord2 = "";
-        keywords = new ArrayList<String>();
+        keywords = new ArrayList<>();
         setFilters();
     }
 
@@ -38,17 +43,19 @@ public class DiskFiles implements IFileManager {
     // Removes current entry, if any exists
     public void remove() {
         if(fileList.size() == 0) return;
-        fileList.remove(filterIds.get(currentIndex));
+        fileList.remove((int)filterIds.get(currentIndex));
+
         setFilters();
     }
 
     //Updates current entry with this file
     // FIXME - Not implemented
     public void update(File fileName) {
-        return;
+
     }
     // Filters entries to fall between time1 and date2, returns # of entries which matched
     public int filterTime(String time1,String time2){
+        if(time1 == null || time2 == null) return filterIds.size();
         if(time1.isEmpty() && time2.isEmpty()) return filterIds.size();
         this.date1 = time1;
         this.date2 = time2;
@@ -68,7 +75,7 @@ public class DiskFiles implements IFileManager {
             this.keywords.clear();
             return filterIds.size();
         }
-        this.keywords = new ArrayList<String>(keywords);
+        this.keywords = new ArrayList<>(keywords);
         setFilters();
         return filterIds.size();
     }
@@ -121,7 +128,7 @@ public class DiskFiles implements IFileManager {
     }
 
     private boolean dateMatch(File file) {
-        if(this.date1.isEmpty() && this.date2.isEmpty()) return true;
+        if(this.date1.isEmpty() || this.date2.isEmpty()) return true;
         String fileDateTime;
         try {
             ExifInterface exif = new ExifInterface(file.getPath());
@@ -138,17 +145,19 @@ public class DiskFiles implements IFileManager {
         String date2[] = this.date2.split("/"); //Index 1 is month, Index 2 is year.
         if (date1.length == 3 && date2.length == 3) {
             fileDate[2] = fileDate[2].substring(0, 2);
-            if (Integer.parseInt(date1[2]) <= Integer.parseInt(fileDate[0]) && Integer.parseInt(date2[2]) >= Integer.parseInt(fileDate[0])) { //Within Year
-                if (Integer.parseInt(date1[1]) <= Integer.parseInt(fileDate[1]) && Integer.parseInt(date2[1]) >= Integer.parseInt(fileDate[1])) { //Within Month
-                    if (Integer.parseInt(date1[0]) <= Integer.parseInt(fileDate[2]) && Integer.parseInt(date2[0]) >= Integer.parseInt(fileDate[2])) { //Within Month
-                        return true;
-                    } else {
-                        return false;
-                    }
-                }
+            int day1,month1,year1;
+            int day2,month2,year2;
+            int day3,month3,year3;
+            day1 = Integer.parseInt(date1[0]); month1 = Integer.parseInt(date1[1]); year1 = Integer.parseInt(date1[2]);
+            day2 = Integer.parseInt(fileDate[2]); month2 = Integer.parseInt(fileDate[1]); year2 = Integer.parseInt(fileDate[0]);
+            day3 = Integer.parseInt(date2[0]); month3 = Integer.parseInt(date2[1]); year3 = Integer.parseInt(date2[2]);
+            int flag1 = compareDate(year1,month1,day1,year2,month2,day2);
+            int flag2 = compareDate(year3,month3,day3,year2,month2,day2);
+            if( (flag1 <= 0 && flag2 >= 0) ) {
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
     //FIXME - Not implemented.
@@ -167,9 +176,30 @@ public class DiskFiles implements IFileManager {
         }
         if(keyword == null) return false; //No keyword stored in file, so it can't match.
         for(int i = 0; i < keywords.size(); i++) {
+            if(keywords.get(i).equals("")) return true;
             if (!keyword.equalsIgnoreCase(keywords.get(i))) return false;
         }
         return true;
+    }
+
+    /* Returns -1 for less than, 0 for equal, 1 for greater than */
+    private int compareDate(int year1,int month1,int day1,int year2,int month2,int day2) {
+        if(year1 == year2) {
+            if(month1 == month2) {
+                if(day1 == day2) {
+                    return 0; //Matching dates
+                } else {
+                    if(day1 < day2) return -1; // less than
+                    return 1;  //greater than
+                }
+            } else {
+                if(month1 < month2) return -1; // less than
+                return 1; //greater than
+            }
+        } else {
+            if(year1 < year2) return -1; // less than
+            return 1; // greater than
+        }
     }
 
 }
