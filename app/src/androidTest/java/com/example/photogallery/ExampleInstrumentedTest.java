@@ -24,8 +24,8 @@ import static org.junit.Assert.*;
 @RunWith(AndroidJUnit4.class)
 public class ExampleInstrumentedTest {
     private DiskFiles testFiles;
-    private String[] expectedCaptions = {"Home","Kitchen","BookCase","Cat","Home"}; //From last to first
-    private String[] expectedFilenames = {"JPEG_20180503_200341_2047183590.jpg","JPEG_20180503_200115_1410467293.jpg","JPEG_20180502_233559_1645060181.jpg","JPEG_20180502_233500_470527435.jpg","JPEG_20180502_233449_1898546846.jpg",null};
+    private String[] expectedCaptions = {"TV","Cat","Couch","TV"}; //From last to first
+    private String[] expectedFilenames = {"JPEG_20180516_235827_1089316113.jpg","JPEG_20180516_235758_221696083.jpg","JPEG_20180516_235738_1742072987.jpg","JPEG_20180516_235720_535951407.jpg",null};
 
     private static final int PREV_NEXT_STEPS = 10;
 
@@ -68,14 +68,14 @@ public class ExampleInstrumentedTest {
     public void testKeywords() {
         File file;
         ArrayList<String> keywords = new ArrayList<>();
-        // Special test of "Home" keyword, it should have two results
+        // Special test of "TV" keyword, it should have two results
         keywords.add(expectedCaptions[0]);
         testFiles.filter(keywords);
         file = testFiles.get();
         assertEquals(expectedFilenames[0],file.getName());
         testFiles.previous();
         file = testFiles.get();
-        assertEquals(expectedFilenames[4],file.getName());
+        assertEquals(expectedFilenames[3],file.getName());
         keywords.clear();
         testFiles.resetFilter();
         // Test remainder keywords
@@ -87,15 +87,21 @@ public class ExampleInstrumentedTest {
             keywords.clear();
             testFiles.resetFilter();
         }
-        // Test for none found
-        keywords.add("NOMATCH");
-        testFiles.filter(keywords);
-        assertEquals(null,testFiles.get());
-        // Test blank keyword
+        //Make sure adding a blank search term still returns everything
         keywords.clear();
         keywords.add("");
         testFiles.filter(keywords);
+        for(int i = 0; i < expectedCaptions.length;i++) {
+            file = testFiles.get();
+            assertEquals(expectedFilenames[i], file.getName());
+            testFiles.previous();
+        }
+        // Test for none found
+        keywords.clear();
+        keywords.add("NOMATCH");
+        testFiles.filter(keywords);
         assertEquals(null,testFiles.get());
+
         //Test completely empty keywords array
         keywords.clear();
         testFiles.filter(keywords);
@@ -106,10 +112,10 @@ public class ExampleInstrumentedTest {
     public void testDates() {
         /* The tested method assumes and expects to receive dates in valid format. */
         //tryDates are in date pairs
-        String[] tryFirst = {"03/05/2018","02/05/2018","01/01/1000","01/01/2017","01/01/2019"};
-        String[] trySecond ={"03/05/2018","02/05/2018","01/01/9999","31/12/2017","31/12/2019"};
+        String[] tryFirst = {"16/05/2018","02/05/2018","01/01/1000","01/01/2017","01/01/2019"};
+        String[] trySecond ={"16/05/2018","02/05/2018","01/01/9999","31/12/2017","31/12/2019"};
         File file;
-        Integer[][] expectedResults = { {0,1},{2,3,4},{0,1,2,3,4},{5},{5}};
+        Integer[][] expectedResults = { {0,1,2,3},{4},{0,1,2,3},{4},{4}};
         for(int i = 0; i < tryFirst.length;i++) {
             testFiles.resetFilter();
             testFiles.filterTime(tryFirst[i],trySecond[i]);
