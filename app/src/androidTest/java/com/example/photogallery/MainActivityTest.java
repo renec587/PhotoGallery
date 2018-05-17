@@ -33,127 +33,24 @@ public class MainActivityTest {
 
     @Test
     public void mainActivityTest() {
-        ViewInteraction editText = onView(
-                allOf(withId(R.id.textCaption), withText("TV"),
-                        childAtPosition(
-                                allOf(withId(R.id.container),
-                                        childAtPosition(
-                                                withId(android.R.id.content),
-                                                0)),
-                                0),
-                        isDisplayed()));
-        editText.check(matches(withText("TV")));
+        ViewInteraction captionView = onView(withId(R.id.textCaption));
+        ViewInteraction dateView = onView(withId(R.id.textDateTime));
+        ViewInteraction leftButton = onView(withId(R.id.imageButton2));
 
-        ViewInteraction textView = onView(
-                allOf(withId(R.id.textDateTime), withText("2018:05:16 23:58:36"),
-                        childAtPosition(
-                                allOf(withId(R.id.container),
-                                        childAtPosition(
-                                                withId(android.R.id.content),
-                                                0)),
-                                4),
-                        isDisplayed()));
-        textView.check(matches(withText("2018:05:16 23:58:36")));
+        captionView.check(matches(withText("TV")));
+        dateView.check(matches(withText("2018:05:16 23:58:36")));
 
-        ViewInteraction appCompatImageButton = onView(
-                allOf(withId(R.id.imageButton2),
-                        childAtPosition(
-                                allOf(withId(R.id.container),
-                                        childAtPosition(
-                                                withId(android.R.id.content),
-                                                0)),
-                                1),
-                        isDisplayed()));
-        appCompatImageButton.perform(click());
+        leftButton.perform(click());
+        captionView.check(matches(withText("Cat")));
+        dateView.check(matches(withText("2018:05:16 23:58:17")));
 
-        ViewInteraction editText2 = onView(
-                allOf(withId(R.id.textCaption), withText("Cat"),
-                        childAtPosition(
-                                allOf(withId(R.id.container),
-                                        childAtPosition(
-                                                withId(android.R.id.content),
-                                                0)),
-                                0),
-                        isDisplayed()));
-        editText2.check(matches(withText("Cat")));
+        leftButton.perform(click());
+        captionView.check(matches(withText("Couch")));
+        dateView.check(matches(withText("2018:05:16 23:57:45")));
 
-        ViewInteraction textView2 = onView(
-                allOf(withId(R.id.textDateTime), withText("2018:05:16 23:58:17"),
-                        childAtPosition(
-                                allOf(withId(R.id.container),
-                                        childAtPosition(
-                                                withId(android.R.id.content),
-                                                0)),
-                                4),
-                        isDisplayed()));
-        textView2.check(matches(withText("2018:05:16 23:58:17")));
-
-        ViewInteraction appCompatImageButton2 = onView(
-                allOf(withId(R.id.imageButton2),
-                        childAtPosition(
-                                allOf(withId(R.id.container),
-                                        childAtPosition(
-                                                withId(android.R.id.content),
-                                                0)),
-                                1),
-                        isDisplayed()));
-        appCompatImageButton2.perform(click());
-
-        ViewInteraction editText3 = onView(
-                allOf(withId(R.id.textCaption), withText("Couch"),
-                        childAtPosition(
-                                allOf(withId(R.id.container),
-                                        childAtPosition(
-                                                withId(android.R.id.content),
-                                                0)),
-                                0),
-                        isDisplayed()));
-        editText3.check(matches(withText("Couch")));
-
-        ViewInteraction textView3 = onView(
-                allOf(withId(R.id.textDateTime), withText("2018:05:16 23:57:45"),
-                        childAtPosition(
-                                allOf(withId(R.id.container),
-                                        childAtPosition(
-                                                withId(android.R.id.content),
-                                                0)),
-                                4),
-                        isDisplayed()));
-        textView3.check(matches(withText("2018:05:16 23:57:45")));
-
-        ViewInteraction appCompatImageButton3 = onView(
-                allOf(withId(R.id.imageButton2),
-                        childAtPosition(
-                                allOf(withId(R.id.container),
-                                        childAtPosition(
-                                                withId(android.R.id.content),
-                                                0)),
-                                1),
-                        isDisplayed()));
-        appCompatImageButton3.perform(click());
-
-        ViewInteraction textView4 = onView(
-                allOf(withId(R.id.textDateTime), withText("2018:05:16 23:57:26"),
-                        childAtPosition(
-                                allOf(withId(R.id.container),
-                                        childAtPosition(
-                                                withId(android.R.id.content),
-                                                0)),
-                                4),
-                        isDisplayed()));
-        textView4.check(matches(withText("2018:05:16 23:57:26")));
-
-        ViewInteraction editText4 = onView(
-                allOf(withId(R.id.textCaption), withText("TV"),
-                        childAtPosition(
-                                allOf(withId(R.id.container),
-                                        childAtPosition(
-                                                withId(android.R.id.content),
-                                                0)),
-                                0),
-                        isDisplayed()));
-        editText4.check(matches(withText("TV")));
-
+        leftButton.perform(click());
+        captionView.check(matches(withText("TV")));
+        dateView.check(matches(withText("2018:05:16 23:57:26")));
     }
 
     private static Matcher<View> childAtPosition(
