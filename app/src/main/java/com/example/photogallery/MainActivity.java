@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.icu.text.SimpleDateFormat;
 import android.media.ExifInterface;
+import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -29,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 
+import static android.provider.MediaStore.Video.Thumbnails.MINI_KIND;
 import static java.lang.Boolean.TRUE;
 
 //TODO - Use Location services to insert EXIF data into each picture after it is taken.
@@ -91,6 +93,14 @@ public class MainActivity extends AppCompatActivity {
         if(fileManager.next() == 0) return;
         File nextFile = fileManager.get();
         if(nextFile == null) return;
+        //TODO - I have to find out the type of the file (Look at the extension), and do a
+        // Probably need to put the below image testing block into a separate function, because I call this]
+        //Repeatedly throughout the application.
+        if(false) { //FIXME - Change to if(typis=video) or something
+          Bitmap foo =   ThumbnailUtils.createVideoThumbnail(nextFile.getPath(),MINI_KIND);
+          imageView.setImageBitmap(foo);
+        }
+        System.out.println(nextFile.toString());
         imageView.setImageURI(FileProvider.getUriForFile(this,"com.example.android.fileprovider",nextFile));
         showImageAttribs();
     }
@@ -131,7 +141,6 @@ public class MainActivity extends AppCompatActivity {
                 //Do nothing
             }
             if(videoFile != null) {
-                //TODO - Save the file in the fileManager, probably have to add the ability to do that? Or maybe another instance of the fileManager! Oh my gawwwwd!
                 fileManager.save(videoFile);
                 photoURI = FileProvider.getUriForFile(this,"com.example.android.fileprovider",videoFile);
                 intent.putExtra(MediaStore.EXTRA_OUTPUT,videoURI);
