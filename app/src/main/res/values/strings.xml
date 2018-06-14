@@ -82,4 +82,5 @@
     <string name="main_Snap">Snap</string>
     <string name="main_Search">Search</string>
     <string name="main_Settings">Settings</string>
+    <string name="video_button">Video</string>
 </resources>

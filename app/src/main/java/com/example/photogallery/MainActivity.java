@@ -36,6 +36,7 @@ import static java.lang.Boolean.TRUE;
 public class MainActivity extends AppCompatActivity {
 
     Uri photoURI;
+    Uri videoURI;
     private TextView mTextMessage;
     static final int REQUEST_IMAGE = 1;
     static final int SEARCH_ACTIVITY = 2;
@@ -118,6 +119,53 @@ public class MainActivity extends AppCompatActivity {
                 startActivityForResult(intent, REQUEST_IMAGE);
             }
         }
+    }
+
+    public void videoButton(View view) {
+        Intent intent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
+        if(intent.resolveActivity(getPackageManager()) != null) {
+            File videoFile = null;
+            try {
+                videoFile = createVideoFile();
+            } catch (IOException ex) {
+                //Do nothing
+            }
+            if(videoFile != null) {
+                //TODO - Save the file in the fileManager, probably have to add the ability to do that? Or maybe another instance of the fileManager! Oh my gawwwwd!
+                fileManager.save(videoFile);
+                photoURI = FileProvider.getUriForFile(this,"com.example.android.fileprovider",videoFile);
+                intent.putExtra(MediaStore.EXTRA_OUTPUT,videoURI);
+                startActivityForResult(intent, REQUEST_IMAGE);
+            }
+        }
+    }
+
+    public void playButton(View view) {
+        //TODO - Get the file Uri we are viewing, and call playMedia
+    }
+
+    public void playMedia(Uri file) {
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+       intent.setData(file);
+        if(intent.resolveActivity(getPackageManager()) != null) {
+            startActivity(intent);
+        }
+    }
+
+    private File createVideoFile() throws IOException {
+        // Create an image file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String imageFileName = "MP4_" + timeStamp + "_";
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        File image = File.createTempFile(
+                imageFileName,  /* prefix */
+                ".mp4",         /* suffix */
+                storageDir      /* directory */
+        );
+        image.getParentFile().mkdirs();
+        // Save a file: path for use with ACTION_VIEW intents
+        mCurrentPhotoPath = image.getAbsolutePath();
+        return image;
     }
 
     @Override
