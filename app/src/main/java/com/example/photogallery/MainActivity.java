@@ -24,7 +24,16 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.coremedia.iso.IsoFile;
+import com.coremedia.iso.boxes.Container;
+import com.googlecode.mp4parser.authoring.Movie;
+import com.googlecode.mp4parser.authoring.builder.DefaultMp4Builder;
+import com.googlecode.mp4parser.boxes.apple.AppleNameBox;
+import com.googlecode.mp4parser.util.Path;
+
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,7 +43,6 @@ import static android.provider.MediaStore.Video.Thumbnails.MINI_KIND;
 import static java.lang.Boolean.TRUE;
 
 //TODO - Use Location services to insert EXIF data into each picture after it is taken.
-//TODO - Search page has to return proper data (check for valid data), and we have to filter on those results.
 public class MainActivity extends AppCompatActivity {
 
     Uri photoURI;
@@ -42,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView mTextMessage;
     static final int REQUEST_IMAGE = 1;
     static final int SEARCH_ACTIVITY = 2;
+    static final int PICTURE_VIEW_ACTIVITY = 3;
     String mCurrentPhotoPath;
     ImageView imageView;
     TextView tvDateTime;
@@ -78,8 +87,7 @@ public class MainActivity extends AppCompatActivity {
                 setCaption(etCaption.getText().toString(),fileManager.get());
             }
         });
-        if(fileManager.size() >= 1) imageView.setImageURI(FileProvider.getUriForFile(this,"com.example.android.fileprovider",fileManager.get()));
-        showImageAttribs();
+        displayPicture(fileManager.get());
     }
 
     /* Pressed Search */
@@ -93,23 +101,24 @@ public class MainActivity extends AppCompatActivity {
         if(fileManager.next() == 0) return;
         File nextFile = fileManager.get();
         if(nextFile == null) return;
-        //TODO - I have to find out the type of the file (Look at the extension), and do a
-        // Probably need to put the below image testing block into a separate function, because I call this]
-        //Repeatedly throughout the application.
-        if(false) { //FIXME - Change to if(typis=video) or something
-          Bitmap foo =   ThumbnailUtils.createVideoThumbnail(nextFile.getPath(),MINI_KIND);
-          imageView.setImageBitmap(foo);
-        }
-        System.out.println(nextFile.toString());
-        imageView.setImageURI(FileProvider.getUriForFile(this,"com.example.android.fileprovider",nextFile));
-        showImageAttribs();
+        displayPicture(nextFile);
     }
 
     public void previousPicture(View view) {
         if(fileManager.previous() < 0) return;
         File file = fileManager.get();
         if (file == null) return;
-        imageView.setImageURI(FileProvider.getUriForFile(this,"com.example.android.fileprovider",file));
+        displayPicture(file);
+    }
+
+    private void displayPicture(File file) {
+        if(file == null) return;
+        if(fileManager.getType() == 2) {
+            Bitmap foo = ThumbnailUtils.createVideoThumbnail(file.getPath(),MINI_KIND);
+            imageView.setImageBitmap(foo);
+        } else {
+            imageView.setImageURI(FileProvider.getUriForFile(this, "com.example.android.fileprovider", file));
+        }
         showImageAttribs();
     }
 
@@ -142,7 +151,7 @@ public class MainActivity extends AppCompatActivity {
             }
             if(videoFile != null) {
                 fileManager.save(videoFile);
-                photoURI = FileProvider.getUriForFile(this,"com.example.android.fileprovider",videoFile);
+                videoURI = FileProvider.getUriForFile(this,"com.example.android.fileprovider",videoFile);
                 intent.putExtra(MediaStore.EXTRA_OUTPUT,videoURI);
                 startActivityForResult(intent, REQUEST_IMAGE);
             }
@@ -150,7 +159,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void playButton(View view) {
-        //TODO - Get the file Uri we are viewing, and call playMedia
+        File file = fileManager.get();
+        Uri fileUri = FileProvider.getUriForFile(this,"com.example.android.fileprovider",file);
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+        if(fileManager.getType() == 1) {
+            intent.setDataAndType(fileUri, "image/jpeg");
+        } else {
+            intent.setDataAndType(fileUri, "video/mp4");
+        }
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        startActivity(intent);
     }
 
     public void playMedia(Uri file) {
@@ -179,10 +198,11 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode,int resultCode,Intent data) {
+        File file = fileManager.get();
+        if(file == null) return;
         if(requestCode == REQUEST_IMAGE && resultCode == RESULT_OK) {
-            imageView.setImageURI(photoURI);
             setCaption(DEFAULT_CAPTION,fileManager.get());
-            showImageAttribs();
+            displayPicture(file);
         } else if(requestCode == SEARCH_ACTIVITY && resultCode == RESULT_OK) {
             tvLatLong.setText("SEARCH OK");
             String firstDate = data.getStringExtra("STARTDATE");
@@ -192,31 +212,54 @@ public class MainActivity extends AppCompatActivity {
             if(!keyWord.isEmpty()) keywords.add(keyWord);
             fileManager.filter(keywords);
             fileManager.filterTime(firstDate,secondDate);
-            File file = fileManager.get();
-            if(file != null) {
-                imageView.setImageURI(FileProvider.getUriForFile(this, "com.example.android.fileprovider", file));
-            }
-            showImageAttribs();
+            file = fileManager.get();
+            displayPicture(file);
         }
     }
 
     private String getCaption(File imageFile) {
-        try {
-            ExifInterface exif = new ExifInterface(imageFile.getPath());
-            return exif.getAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION);
-        } catch (Exception e) {
-            return "Caption Error";
+        String caption = "No Caption";
+        if(fileManager.getType() == 2) {
+            IsoFile isoFile;
+            try {
+                isoFile = new IsoFile(imageFile.getPath());
+            } catch (IOException ex) {
+                return "Caption Error";
+            }
+            AppleNameBox nam = Path.getPath(isoFile, "/moov[0]/udta[0]/meta[0]/ilst/©nam");
+            caption = nam.getValue();
+        } else {
+            try {
+                ExifInterface exif = new ExifInterface(imageFile.getPath());
+                caption = exif.getAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION);
+            } catch (Exception e) {
+                return "Caption Error";
+            }
         }
+        return caption;
     }
 
     private void setCaption(String caption,File imageFile) {
-        try {
-            ExifInterface exif = new ExifInterface(imageFile.getPath());
-            String attrib = ExifInterface.TAG_IMAGE_DESCRIPTION;
-            exif.setAttribute(attrib,caption);
-            exif.saveAttributes();
-        } catch (Exception e) {
-            //Do nothing
+        if(imageFile == null) return;
+        if(fileManager.getType() == 2) {
+            IsoFile isoFile;
+            try {
+                isoFile = new IsoFile(imageFile.getPath());
+            } catch (IOException ex) {
+                System.out.println("Error: Not able to make IsoFile" + ex.toString());
+                return;
+            }
+            AppleNameBox nam = Path.getPath(isoFile, "/moov[0]/udta[0]/meta[0]/ilst/©nam");
+            nam.setValue(caption);
+        } else {
+            try {
+                ExifInterface exif = new ExifInterface(imageFile.getPath());
+                String attrib = ExifInterface.TAG_IMAGE_DESCRIPTION;
+                exif.setAttribute(attrib, caption);
+                exif.saveAttributes();
+            } catch (Exception e) {
+                //Do nothing
+            }
         }
     }
 

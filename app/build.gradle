@@ -19,7 +19,7 @@ android {
         }
     }
     lintOptions {
-        checkReleaseBuilds  false
+        checkReleaseBuilds false
     }
 }
 
@@ -33,5 +33,6 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.1'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
+    // Use this for Video file tagging
+    implementation 'com.googlecode.mp4parser:isoparser:1.1.21'
 }
-

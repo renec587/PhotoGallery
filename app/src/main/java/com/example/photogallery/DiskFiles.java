@@ -86,6 +86,17 @@ public class DiskFiles implements IFileManager {
         coord1 = coord2 = "";
         setFilters();
     }
+
+    /* Returns type of current file. 1 is Image, 2 is video. Yes I hardcoded this. Sue me.*/
+    public int getType() {
+      File currentFile = get();
+      String fileName = currentFile.getName();
+      if (fileName.endsWith("jpg")) {
+          return 1;
+      }
+      return 2;
+    }
+
     //Gets currently selected entry
     public File get() {
         if(filterIds.size() == 0) return null;

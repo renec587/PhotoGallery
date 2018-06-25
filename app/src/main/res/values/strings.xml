@@ -83,4 +83,8 @@
     <string name="main_Search">Search</string>
     <string name="main_Settings">Settings</string>
     <string name="video_button">Video</string>
+
+    <string name="title_activity_picture_view">PictureViewActivity</string>
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>
 </resources>
