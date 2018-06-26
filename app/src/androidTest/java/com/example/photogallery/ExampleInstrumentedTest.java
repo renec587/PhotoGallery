@@ -13,6 +13,7 @@ import org.junit.runner.RunWith;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Random;
 
 import static org.junit.Assert.*;
 
@@ -106,6 +107,7 @@ public class ExampleInstrumentedTest {
         keywords.clear();
         testFiles.filter(keywords);
         assertEquals(null,testFiles.get());
+        testFiles.resetFilter();
     }
 
     @Test
@@ -141,8 +143,42 @@ public class ExampleInstrumentedTest {
         assertNotNull(testFiles.get());
     }
 
+    @Test
+    public void monkeyNextPrev() {
+        int ITERATIONS = 10000;
+        Random rand = new Random();
+        for(int i = 0; i < ITERATIONS; i++) {
+            if (rand.nextInt(2) == 0) {
+                testFiles.previous();
+            } else {
+                testFiles.next();
+            }
+        }
+    }
+
+    @Test
+    public void stressTest() {
+        int ITERATIONS = 1000;
+        for(int i = 0; i < ITERATIONS;i++) {
+            resetTest();
+            testDates();
+            resetTest();
+            testKeywords();
+            resetTest();
+            testCaptions();
+        }
+    }
+
+    private void resetTest() {
+        for (int i = 0; i <= expectedFilenames.length;i++) {
+            testFiles.next();
+        }
+    }
 
     private String getCaption(File thisFile) {
+        if(thisFile == null) {
+            System.out.println("break here");
+        }
         ExifInterface exif;
         try {
             exif = new ExifInterface(thisFile.getPath());

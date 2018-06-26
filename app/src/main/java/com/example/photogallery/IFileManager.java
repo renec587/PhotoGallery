@@ -12,11 +12,9 @@ public interface IFileManager {
     //Updates current entry with this file
     void update(File fileName);
     // Filters entries to fall between time1 and time2
-    int filterTime(String time1,String time2);
-    // Filters entries that fall between coord1 and coord2
-    int filterLocation(String coord1,String coord2);
+    void filterTime(String time1,String time2);
     // Filters entries that match these keywords
-    int filter(ArrayList<String> keywords);
+    void filter(ArrayList<String> keywords);
     // Removes all active filters
     void resetFilter();
     //Gets currently selected entry

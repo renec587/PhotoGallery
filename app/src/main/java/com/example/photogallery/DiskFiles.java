@@ -9,7 +9,12 @@ import android.os.Environment;
 import android.support.annotation.RequiresApi;
 
 
+import com.coremedia.iso.IsoFile;
+import com.googlecode.mp4parser.boxes.apple.AppleNameBox;
+import com.googlecode.mp4parser.util.Path;
+
 import java.io.File;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,30 +59,21 @@ public class DiskFiles implements IFileManager {
 
     }
     // Filters entries to fall between time1 and date2, returns # of entries which matched
-    public int filterTime(String time1,String time2){
-        if(time1 == null || time2 == null) return filterIds.size();
-        if(time1.isEmpty() && time2.isEmpty()) return filterIds.size();
+    public void filterTime(String time1,String time2){
+        if(time1 == null || time2 == null) return;
+        if(time1.isEmpty() && time2.isEmpty()) return;
         this.date1 = time1;
         this.date2 = time2;
-        setFilters();
-        return filterIds.size();
-    }
-    // Filters entries that fall between coord1 and coord2, returns # of matching entries (all filters applied)
-    public int filterLocation(String coord1,String coord2) {
-        this.coord1 = coord1;
-        this.coord2 = coord2;
-        setFilters();
-        return filterIds.size();
+        return;
     }
     // Filters entries that match these keywords returns # of entries which matched
-    public int filter(ArrayList<String> keywords) {
+    public void filter(ArrayList<String> keywords) {
         if(keywords.size() == 0) {
             this.keywords.clear();
-            return filterIds.size();
+            return;
         }
         this.keywords = new ArrayList<>(keywords);
-        setFilters();
-        return filterIds.size();
+        return;
     }
     // Removes all active filters
     public void resetFilter() {
@@ -88,13 +84,17 @@ public class DiskFiles implements IFileManager {
     }
 
     /* Returns type of current file. 1 is Image, 2 is video. Yes I hardcoded this. Sue me.*/
-    public int getType() {
-      File currentFile = get();
+    private int getType(File currentFile) {
+      if(currentFile == null) return -1;
       String fileName = currentFile.getName();
       if (fileName.endsWith("jpg")) {
           return 1;
       }
       return 2;
+    }
+
+    public int getType() {
+        return this.getType(get());
     }
 
     //Gets currently selected entry
@@ -123,8 +123,8 @@ public class DiskFiles implements IFileManager {
     }
 
     // Applies the set filters to the dataset
-    private void setFilters() {
-        if(fileList.size() == 0) return;
+    public int setFilters() {
+        if(fileList.size() == 0) return fileList.size();
         filterIds.clear();
         if(keywords.size() == 0 && coord1.isEmpty() && date1.isEmpty()) {
             for(int i = 0; i < fileList.size(); i++) filterIds.add(i);
@@ -136,26 +136,24 @@ public class DiskFiles implements IFileManager {
             }
         }
         currentIndex = filterIds.size() -1;
+        return filterIds.size();
     }
 
     private boolean dateMatch(File file) {
         if(this.date1.isEmpty() || this.date2.isEmpty()) return true;
         String fileDateTime;
-        try {
-            ExifInterface exif = new ExifInterface(file.getPath());
-            fileDateTime = exif.getAttribute(ExifInterface.TAG_DATETIME);
-            if(fileDateTime == null) return false;
-        } catch(Exception e) {
-            System.out.println("getDateTime:" + e);
-            return true; // We default to true if we can't prove false.
-        }
-        String fileDate[] = fileDateTime.split(":");
+        String filename = file.getName();
+        String test[] = filename.split("_");
+        String fileDate[] = new String[3];
+        fileDate[0] = test[1].substring(0,4);
+        fileDate[1] = test[1].substring(4,6);
+        fileDate[2] = test[1].substring(6,8);
+
         if(this.date1.isEmpty()) this.date1 = EARLY_DATE;
         if(this.date2.isEmpty()) this.date2 = LATE_DATE;
         String date1[] = this.date1.split("/"); //Index 0 is day
         String date2[] = this.date2.split("/"); //Index 1 is month, Index 2 is year.
         if (date1.length == 3 && date2.length == 3) {
-            fileDate[2] = fileDate[2].substring(0, 2);
             int day1,month1,year1;
             int day2,month2,year2;
             int day3,month3,year3;
@@ -179,12 +177,7 @@ public class DiskFiles implements IFileManager {
     private boolean keywordMatch(File file) {
         ExifInterface exif;
         String keyword;
-        try {
-            exif = new ExifInterface(file.getPath());
-            keyword = exif.getAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION);
-        } catch (Exception e) {
-            return true; //I guess we match if there is nothing there!
-        }
+        keyword = getCaption(file);
         if(keyword == null) return false; //No keyword stored in file, so it can't match.
         for(int i = 0; i < keywords.size(); i++) {
             if(keywords.get(i).equals("")) return true;
@@ -212,4 +205,32 @@ public class DiskFiles implements IFileManager {
             return 1; // greater than
         }
     }
+
+    public String getCaption() {
+        return getCaption(this.get());
+    }
+
+    private String getCaption(File imageFile) {
+        String caption = "No Caption";
+        int type = getType(imageFile);
+        if(type == 2) {
+            IsoFile isoFile;
+            try {
+                isoFile = new IsoFile(imageFile.getPath());
+            } catch (IOException ex) {
+                return "Caption Error";
+            }
+            AppleNameBox nam = Path.getPath(isoFile, "/moov[0]/udta[0]/meta[0]/ilst/©nam");
+            caption = nam.getValue();
+        } else if(type == 1){
+            try {
+                ExifInterface exif = new ExifInterface(imageFile.getPath());
+                caption = exif.getAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION);
+            } catch (Exception e) {
+                return "Caption Error";
+            }
+        }
+        return caption;
+    }
+
 }

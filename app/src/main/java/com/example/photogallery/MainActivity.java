@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.icu.text.SimpleDateFormat;
 import android.media.ExifInterface;
+import android.media.RemoteController;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Bundle;
@@ -54,7 +55,6 @@ public class MainActivity extends AppCompatActivity {
     String mCurrentPhotoPath;
     ImageView imageView;
     TextView tvDateTime;
-    TextView tvLatLong;
     EditText etCaption;
     DiskFiles fileManager;
 
@@ -71,7 +71,6 @@ public class MainActivity extends AppCompatActivity {
 
         mTextMessage = findViewById(R.id.message);
         imageView = findViewById(R.id.imageView);
-        tvLatLong = findViewById(R.id.tvLatLong);
         tvDateTime = findViewById(R.id.textDateTime);
         etCaption = findViewById(R.id.textCaption);
         etCaption.addTextChangedListener(new TextWatcher() {
@@ -89,6 +88,7 @@ public class MainActivity extends AppCompatActivity {
         });
         displayPicture(fileManager.get());
     }
+
 
     /* Pressed Search */
     public void searchMessage(View view) {
@@ -160,6 +160,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void playButton(View view) {
         File file = fileManager.get();
+        if(file == null) return;
         Uri fileUri = FileProvider.getUriForFile(this,"com.example.android.fileprovider",file);
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -204,7 +205,6 @@ public class MainActivity extends AppCompatActivity {
             setCaption(DEFAULT_CAPTION,fileManager.get());
             displayPicture(file);
         } else if(requestCode == SEARCH_ACTIVITY && resultCode == RESULT_OK) {
-            tvLatLong.setText("SEARCH OK");
             String firstDate = data.getStringExtra("STARTDATE");
             String secondDate = data.getStringExtra("ENDDATE");
             String keyWord = data.getStringExtra("KEYWORD");
@@ -212,45 +212,20 @@ public class MainActivity extends AppCompatActivity {
             if(!keyWord.isEmpty()) keywords.add(keyWord);
             fileManager.filter(keywords);
             fileManager.filterTime(firstDate,secondDate);
+            fileManager.setFilters();
             file = fileManager.get();
             displayPicture(file);
         }
     }
 
-    private String getCaption(File imageFile) {
-        String caption = "No Caption";
-        if(fileManager.getType() == 2) {
-            IsoFile isoFile;
-            try {
-                isoFile = new IsoFile(imageFile.getPath());
-            } catch (IOException ex) {
-                return "Caption Error";
-            }
-            AppleNameBox nam = Path.getPath(isoFile, "/moov[0]/udta[0]/meta[0]/ilst/©nam");
-            caption = nam.getValue();
-        } else {
-            try {
-                ExifInterface exif = new ExifInterface(imageFile.getPath());
-                caption = exif.getAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION);
-            } catch (Exception e) {
-                return "Caption Error";
-            }
-        }
-        return caption;
-    }
-
     private void setCaption(String caption,File imageFile) {
         if(imageFile == null) return;
         if(fileManager.getType() == 2) {
-            IsoFile isoFile;
+            MetaDataInsert cmd = new MetaDataInsert();
             try {
-                isoFile = new IsoFile(imageFile.getPath());
+                cmd.writeRandomMetadata(imageFile.getPath(), caption);
             } catch (IOException ex) {
-                System.out.println("Error: Not able to make IsoFile" + ex.toString());
-                return;
             }
-            AppleNameBox nam = Path.getPath(isoFile, "/moov[0]/udta[0]/meta[0]/ilst/©nam");
-            nam.setValue(caption);
         } else {
             try {
                 ExifInterface exif = new ExifInterface(imageFile.getPath());
@@ -265,9 +240,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void showImageAttribs() {
         if(fileManager.get() != null) {
-            tvLatLong.setText(getLatLong(fileManager.get()));
             tvDateTime.setText(getDateTime(fileManager.get()));
-            etCaption.setText(getCaption(fileManager.get()));
+            etCaption.setText(fileManager.getCaption());
         }
     }
 
@@ -305,12 +279,15 @@ public class MainActivity extends AppCompatActivity {
 
 
     private String getDateTime(File file) {
-        try {
-            ExifInterface exif = new ExifInterface(file.getPath());
-            return exif.getAttribute(ExifInterface.TAG_DATETIME);
-        } catch(Exception e) {
-            System.out.println("getDateTime:" + e);
-        }
-        return "No Date Time";
+        if(file == null) return "No Date Time";
+        String fileName = file.getName();
+        String codes[] = fileName.split("_");
+        String year = codes[1].substring(0,4);
+        String month = codes[1].substring(4,6);
+        String day = codes[1].substring(6,8);
+        String hour = codes[2].substring(0,2);
+        String minute = codes[2].substring(2,4);
+        String second = codes[2].substring(4,6);
+        return year + "/" + month + "/" + day + " " + hour + ":" + minute + ":" + second;
     }
 }
