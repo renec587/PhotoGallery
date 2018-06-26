@@ -25,8 +25,8 @@ import static org.junit.Assert.*;
 @RunWith(AndroidJUnit4.class)
 public class ExampleInstrumentedTest {
     private DiskFiles testFiles;
-    private String[] expectedCaptions = {"TV","Cat","Couch","TV"}; //From last to first
-    private String[] expectedFilenames = {"JPEG_20180516_235827_1089316113.jpg","JPEG_20180516_235758_221696083.jpg","JPEG_20180516_235738_1742072987.jpg","JPEG_20180516_235720_535951407.jpg",null};
+    private String[] expectedCaptions = {"Video","TV","Cat","Couch","TV"}; //From last to first
+    private String[] expectedFilenames = {"MP4_20180626_161200_2128016941.mp4","JPEG_20180516_235827_1089316113.jpg","JPEG_20180516_235758_221696083.jpg","JPEG_20180516_235738_1742072987.jpg","JPEG_20180516_235720_535951407.jpg",null};
 
     private static final int PREV_NEXT_STEPS = 10;
 
@@ -58,9 +58,10 @@ public class ExampleInstrumentedTest {
     @Test
     public void testCaptions() {
         File testFile;
+        testFiles.resetFilter();
         for (String caption:expectedCaptions) {
             testFile = testFiles.get();
-            assertEquals(caption,getCaption(testFile));
+            assertEquals(caption,testFiles.getCaption());
             testFiles.previous();
         }
     }
@@ -69,20 +70,30 @@ public class ExampleInstrumentedTest {
     public void testKeywords() {
         File file;
         ArrayList<String> keywords = new ArrayList<>();
-        // Special test of "TV" keyword, it should have two results
+        //Added new "Video" test.
         keywords.add(expectedCaptions[0]);
         testFiles.filter(keywords);
+        testFiles.setFilters();
         file = testFiles.get();
         assertEquals(expectedFilenames[0],file.getName());
+        keywords.clear();
+        testFiles.resetFilter();
+        // Special test of "TV" keyword, it should have two results
+        keywords.add(expectedCaptions[1]);
+        testFiles.filter(keywords);
+        testFiles.setFilters();
+        file = testFiles.get();
+        assertEquals(expectedFilenames[1],file.getName());
         testFiles.previous();
         file = testFiles.get();
-        assertEquals(expectedFilenames[3],file.getName());
+        assertEquals(expectedFilenames[4],file.getName());
         keywords.clear();
         testFiles.resetFilter();
         // Test remainder keywords
-        for(int i = 1; i < expectedCaptions.length - 1;i++) {
+        for(int i = 2; i < expectedCaptions.length - 1;i++) {
             keywords.add(expectedCaptions[i]);
             testFiles.filter(keywords);
+            testFiles.setFilters();
             file = testFiles.get();
             assertEquals(expectedFilenames[i], file.getName());
             keywords.clear();
@@ -92,6 +103,7 @@ public class ExampleInstrumentedTest {
         keywords.clear();
         keywords.add("");
         testFiles.filter(keywords);
+        testFiles.setFilters();
         for(int i = 0; i < expectedCaptions.length;i++) {
             file = testFiles.get();
             assertEquals(expectedFilenames[i], file.getName());
@@ -101,12 +113,20 @@ public class ExampleInstrumentedTest {
         keywords.clear();
         keywords.add("NOMATCH");
         testFiles.filter(keywords);
+        testFiles.setFilters();
         assertEquals(null,testFiles.get());
 
-        //Test completely empty keywords array
+        //Test completely empty keywords array - should return everything
         keywords.clear();
+        testFiles.resetFilter();
         testFiles.filter(keywords);
-        assertEquals(null,testFiles.get());
+        testFiles.setFilters();
+        for(int i = 0; i < expectedCaptions.length;i++) {
+            file = testFiles.get();
+            assertEquals(expectedFilenames[i], file.getName());
+            testFiles.previous();
+        }
+//        assertEquals(null,testFiles.get());
         testFiles.resetFilter();
     }
 
@@ -117,10 +137,11 @@ public class ExampleInstrumentedTest {
         String[] tryFirst = {"16/05/2018","02/05/2018","01/01/1000","01/01/2017","01/01/2019"};
         String[] trySecond ={"16/05/2018","02/05/2018","01/01/9999","31/12/2017","31/12/2019"};
         File file;
-        Integer[][] expectedResults = { {0,1,2,3},{4},{0,1,2,3},{4},{4}};
+        Integer[][] expectedResults = { {1,2,3,4},{5},{0,1,2,3,4},{5},{5}};
         for(int i = 0; i < tryFirst.length;i++) {
             testFiles.resetFilter();
             testFiles.filterTime(tryFirst[i],trySecond[i]);
+            testFiles.setFilters();
             for(int index:expectedResults[i]) {
                 file = testFiles.get();
                 Log.d("Values:",tryFirst[i] + ":" + trySecond[i] + ":" + expectedFilenames[index]);
@@ -136,10 +157,12 @@ public class ExampleInstrumentedTest {
         // Call with blank strings, check for crashing only
         testFiles.resetFilter();
         testFiles.filterTime("","");
+        testFiles.setFilters();
         assertNotNull(testFiles.get());
         // Call with null strings, check for crashing only
         testFiles.resetFilter();
         testFiles.filterTime(null,null);
+        testFiles.setFilters();
         assertNotNull(testFiles.get());
     }
 
@@ -174,20 +197,4 @@ public class ExampleInstrumentedTest {
             testFiles.next();
         }
     }
-
-    private String getCaption(File thisFile) {
-        if(thisFile == null) {
-            System.out.println("break here");
-        }
-        ExifInterface exif;
-        try {
-            exif = new ExifInterface(thisFile.getPath());
-        } catch (IOException e) {
-            e.printStackTrace();
-            return "";
-        }
-        return exif.getAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION);
-    }
-
-
 }
